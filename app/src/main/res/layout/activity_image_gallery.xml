@@ -1,0 +1,16 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="vh1981.com.funnyphotosstorage.ImageGalleryActivity">
+
+    <GridView
+        android:id="@+id/gridImageGallery"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:verticalSpacing="3dp"
+        android:horizontalSpacing="3dp"
+        android:gravity="center"
+        android:numColumns="3"
+        android:stretchMode="columnWidth"/>
+
+</RelativeLayout>
