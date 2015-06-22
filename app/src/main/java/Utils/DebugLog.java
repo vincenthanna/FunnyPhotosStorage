@@ -18,7 +18,10 @@ public class DebugLog {
         java.lang.Exception e = new java.lang.Exception();
         StackTraceElement ste[] = e.getStackTrace();
 
-        System.out.println("[Trace] " + ste[1].getClassName() + "."
+        String[] tmp = ste[1].getClassName().split("\\.");
+        String className = tmp[tmp.length - 1];
+
+        System.out.println("[Trace] " + className + "."
                 + ste[1].getMethodName() + "(" + ste[1].getFileName() + ":"
                 + ste[1].getLineNumber() + ")" + str);
     }

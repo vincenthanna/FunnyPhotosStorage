@@ -4,11 +4,25 @@ import android.graphics.Bitmap;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.view.ViewGroup;
 
 import java.util.ArrayList;
 
 public class SwipeImageViewAdapter extends FragmentPagerAdapter {
     SwipeImageViewDataSource _dataSource;
+    private Fragment mCurrentFragment;
+
+    public Fragment getCurrentFragment() {
+        return mCurrentFragment;
+    }
+
+    @Override
+    public void setPrimaryItem(ViewGroup container, int position, Object object) {
+        if (getCurrentFragment() != object) {
+            mCurrentFragment = ((Fragment) object);
+        }
+        super.setPrimaryItem(container, position, object);
+    }
 
     public SwipeImageViewAdapter(FragmentManager fm) {
         super(fm);
@@ -32,7 +46,7 @@ public class SwipeImageViewAdapter extends FragmentPagerAdapter {
         return null;
     }
 
-    void set_dataSource(SwipeImageViewDataSource dataSource)
+    public void set_dataSource(SwipeImageViewDataSource dataSource)
     {
         _dataSource = dataSource;
     }

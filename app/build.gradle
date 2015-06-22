@@ -41,4 +41,5 @@ dependencies {
     compile files('libs/json_simple-1.1.jar')
     compile files('libs/extra/android.jar')
     compile "com.android.support:support-v4:20.0+"
+    testCompile 'junit:junit:4.12'
 }

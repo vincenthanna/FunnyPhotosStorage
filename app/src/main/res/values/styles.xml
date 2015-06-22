@@ -5,4 +5,13 @@
         <!-- Customize your theme here. -->
     </style>
 
+    <!-- the theme applied to the application or activity -->
+    <style name="CustomActionBarTheme"
+        parent="android:Theme.Holo.Light.DarkActionBar">
+        <item name="android:windowActionBarOverlay">true</item>
+    </style>
+
+    <style name="splashScreenTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <item name="android:windowBackground">@drawable/splash_screen</item>
+    </style>
 </resources>

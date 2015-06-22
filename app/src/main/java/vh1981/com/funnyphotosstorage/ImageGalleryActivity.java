@@ -74,6 +74,10 @@ public class ImageGalleryActivity extends Activity{
                 startActivityForResult(intent, 0);
             }
         });
+
+        String title = getResources().getString(R.string.title_activity_image_gallery);
+        title += " - " + _tag;
+        setTitle(title);
     }
 
     @Override

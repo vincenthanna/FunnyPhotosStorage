@@ -121,15 +121,6 @@ class ClipboardHelperAsyncTask extends AsyncTask<String, Integer, Boolean> /* pa
         try {
             DebugLog.TRACE("URL=" + url);
             InputStream is = (InputStream)new URL(url).openStream();
-            /*
-            Drawable d = Drawable.createFromStream(is, "");
-            if (d != null) {
-                _loadedImageDrawable = d;
-            }
-            else {
-                _loadedImageDrawable = null;
-            }
-            */
             _loadedImageBitmap = BitmapFactory.decodeStream(is);
             return true;
 

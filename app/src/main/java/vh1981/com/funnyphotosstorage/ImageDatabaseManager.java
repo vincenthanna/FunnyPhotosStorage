@@ -4,8 +4,11 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.DebugUtils;
+import android.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import Utils.DebugLog;
 
@@ -18,6 +21,7 @@ public class ImageDatabaseManager {
     private ImgDbHelper _dbHelper;
     private static Context _context;
     private static String[] _defaultTags = {"유머","진지","급정색", "근성", "간지"};
+    private static long UN_TAGGED = -1;
     public static void setContext(Context context)
     {
         ImageDatabaseManager._context = context;
@@ -36,6 +40,50 @@ public class ImageDatabaseManager {
             _instance = new ImageDatabaseManager();
         }
         return _instance;
+    }
+
+    public boolean addTag(String tag, long idOrFailReason) {
+        int tid = findTagId(tag);
+        if (tid < 0) { // 없으므로 새로 생성
+            SQLiteDatabase db = _dbHelper.getWritableDatabase();
+
+            ContentValues values = new ContentValues();
+            values.put(ImgDbHelper.TagsEntry.COLUMN_NAME_TAGNAME, tag);
+            long id = db.insert(ImgDbHelper.TagsEntry.TABLE_NAME, null, values);
+            if (id < 0) {
+                assert false;
+            }
+            db.close();
+
+            idOrFailReason = id;
+            return true;
+        }
+        else {
+            idOrFailReason = tid;
+            return false;
+        }
+    }
+
+    public boolean removeTag(long tagId) {
+        // imageTag에서 해당 tagId를 -1로 변경
+        SQLiteDatabase db = _dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(ImgDbHelper.ImageTagEntry.COLUMN_NAME_TAGID, UN_TAGGED);
+        String whereClause = ImgDbHelper.ImageTagEntry.COLUMN_NAME_TAGID + " = ?";
+        String[] whereArgs = new String[]{Long.toString(tagId)};
+        int cnt = db.update(ImgDbHelper.ImageTagEntry.TABLE_NAME, values, whereClause, whereArgs);
+        DebugLog.TRACE("updated rows = " + Integer.toString(cnt));
+
+        // tag에서 삭제
+        whereClause = ImgDbHelper.TagsEntry._ID + " = ?";
+        whereArgs = new String[]{Long.toString(tagId)};
+        cnt = db.delete(ImgDbHelper.TagsEntry.TABLE_NAME, whereClause, whereArgs);
+        if (cnt == 0) {
+            DebugLog.TRACE("Error!");
+            assert false;
+        }
+
+        return true;
     }
 
     public void initDefaultTags() {
@@ -139,7 +187,7 @@ public class ImageDatabaseManager {
         }
 
         if (found == false) {
-            assert false;
+            return -1;
         }
         return tagId;
     }

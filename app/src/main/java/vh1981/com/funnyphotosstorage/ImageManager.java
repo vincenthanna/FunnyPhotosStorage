@@ -2,6 +2,7 @@ package vh1981.com.funnyphotosstorage;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.util.Pair;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -63,6 +64,10 @@ public class ImageManager implements BitmapSupplier {
         // tag에 해당하는 tagId를 찾는다.
         int tagId = _imgDatabaseManager.findTagId(tag);
 
+        if (tagId < 0) {
+            assert false;
+        }
+
         // tagId - imagefilename 쌍을 저장한다.
         if (_imgDatabaseManager.createImageTag((int)imgId, tag) != true) {
             assert false;
@@ -82,6 +87,9 @@ public class ImageManager implements BitmapSupplier {
 
     public ImageContainer getImageContainer(String tag) {
         int tagId = _imgDatabaseManager.findTagId(tag);
+        if (tagId < 0) {
+            assert false;
+        }
         return _imgDatabaseManager.getImageContainer(tagId, this);
     }
 
@@ -104,5 +112,30 @@ public class ImageManager implements BitmapSupplier {
      */
     public Bitmap getBitmap(String filepath) {
         return _imgFileManager.getBitmap(filepath);
+    }
+
+
+    /**
+     * Title : tag를 생성하는 함수
+     * @param tag : 생성할 tag 이름
+     * @return : 생성된 tag의 tagId
+     */
+    public boolean addTag(String tag, long idOrFailReason)
+    {
+        return _imgDatabaseManager.addTag(tag, idOrFailReason);
+    }
+
+    public boolean removeTag(String tag) {
+        long tagId = _imgDatabaseManager.findTagId(tag);
+        if (tagId >= 0) {
+            return _imgDatabaseManager.removeTag(tagId);
+        }
+        assert false; // cannot happen!
+        return false;
+    }
+
+    public boolean removeTag(long tagId)
+    {
+        return _imgDatabaseManager.removeTag(tagId);
     }
 }
