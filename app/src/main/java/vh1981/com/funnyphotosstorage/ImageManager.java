@@ -120,9 +120,9 @@ public class ImageManager implements BitmapSupplier {
      * @param tag : 생성할 tag 이름
      * @return : 생성된 tag의 tagId
      */
-    public boolean addTag(String tag, long idOrFailReason)
+    public boolean addTag(String tag)
     {
-        return _imgDatabaseManager.addTag(tag, idOrFailReason);
+        return _imgDatabaseManager.addTag(tag);
     }
 
     public boolean removeTag(String tag) {
@@ -137,5 +137,15 @@ public class ImageManager implements BitmapSupplier {
     public boolean removeTag(long tagId)
     {
         return _imgDatabaseManager.removeTag(tagId);
+    }
+
+    public long findTagId(String tag)
+    {
+        return _imgDatabaseManager.findTagId(tag);
+    }
+
+    public String findTag(int id)
+    {
+        return _imgDatabaseManager.findTag(id);
     }
 }

@@ -92,17 +92,19 @@ public class AddTagDialog extends Dialog {
         if (tag.trim().length() == 0) return;
 
         long id = 0;
-        if (ImageManager.instance().addTag(_tag, id)) {
+        if (ImageManager.instance().addTag(_tag) == true) {
             // succeeded:
             UIUtils.showToast(_context, _context.getResources().getString(R.string.tag_added), Toast.LENGTH_SHORT);
             notifyDelegates();
         }
-        else if (id >= 0) {
-            UIUtils.showToast(_context, _context.getResources().getString(R.string.tag_exists), Toast.LENGTH_SHORT);
-        }
         else {
-            // 실패하면 이곳으로 오나 기본적으로 실패할 일이 없음.
-            assert false;
+            if (ImageManager.instance().findTagId(_tag) >= 0) {
+                UIUtils.showToast(_context, _context.getResources().getString(R.string.tag_exists), Toast.LENGTH_SHORT);
+            }
+            else {
+                // 실패하면 이곳으로 오나 기본적으로 실패할 일이 없음.
+                assert false;
+            }
         }
 
         dismiss();

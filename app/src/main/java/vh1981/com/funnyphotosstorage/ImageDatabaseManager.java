@@ -42,7 +42,7 @@ public class ImageDatabaseManager {
         return _instance;
     }
 
-    public boolean addTag(String tag, long idOrFailReason) {
+    public boolean addTag(String tag) {
         int tid = findTagId(tag);
         if (tid < 0) { // 없으므로 새로 생성
             SQLiteDatabase db = _dbHelper.getWritableDatabase();
@@ -54,12 +54,9 @@ public class ImageDatabaseManager {
                 assert false;
             }
             db.close();
-
-            idOrFailReason = id;
             return true;
         }
         else {
-            idOrFailReason = tid;
             return false;
         }
     }
