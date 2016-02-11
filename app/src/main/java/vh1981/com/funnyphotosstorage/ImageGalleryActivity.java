@@ -27,6 +27,7 @@ import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import PopupMenu.*;
 
 import java.util.ArrayList;
 
@@ -343,92 +344,4 @@ class ImagesListGridAdapter extends ArrayAdapter
 
         return convertView;
     }
-}
-
-class PopupMenuItem
-{
-    String _title;
-    String _desc;
-    int _drawableId = android.R.drawable.ic_menu_view;
-
-    public void set_drawableId(int _drawableId) {
-        this._drawableId = _drawableId;
-    }
-
-    public int get_drawableId() {
-        return _drawableId;
-    }
-
-    public void set_desc(String _desc) {
-        this._desc = _desc;
-    }
-
-    public void set_title(String _title) {
-        this._title = _title;
-    }
-
-    public String get_title() {
-        return _title;
-    }
-
-    public String get_desc() {
-        return _desc;
-    }
-
-    public PopupMenuItem(String title)
-    {
-        _title = title;
-    }
-
-    public PopupMenuItem(String title, String desc)
-    {
-        _title = title;
-        _desc = desc;
-    }
-
-    public PopupMenuItem(String title, String desc, int drawableId)
-    {
-        _title = title;
-        _desc = desc;
-        _drawableId = drawableId;
-    }
-}
-
-class PopupMenuAdapter extends ArrayAdapter<PopupMenuItem>
-{
-    Context _context;
-    ImageGalleryActivity _activity;
-    ArrayList<PopupMenuItem> _menuItems;
-    public PopupMenuAdapter(Context context, int resource, ImageGalleryActivity activity, ArrayList<PopupMenuItem> items) {
-        super(context, resource);
-        _activity = activity;
-        _context = context;
-        _menuItems = items;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        View v = convertView;
-        if (v == null) {
-            LayoutInflater vi = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            v = vi.inflate(R.layout.image_gallery_popup_menu_item, null);
-        }
-        PopupMenuItem item = _menuItems.get(position);
-        TextView title = (TextView) v.findViewById(R.id.title);
-        if (item != null) {
-            if (title != null) {
-                title.setText(item.get_title());
-                Drawable img = getContext().getResources().getDrawable(item.get_drawableId());
-                title.setCompoundDrawablesWithIntrinsicBounds(img, null, null, null);
-            }
-        }
-
-        return v;
-    }
-
-    @Override
-    public int getCount() {
-        return _menuItems.size();
-    }
-
 }
