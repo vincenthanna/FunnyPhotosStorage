@@ -17,6 +17,23 @@
     <string name="tag_added">Tag Added : </string>
     <string name="tag_exists">Tag already exists.</string>
     <string name="sure_to_delete">Sure to delete?</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="settings_backup">Backup</string>
+    <string name="settings_backup_running">Backup Running</string>
+    <string name="settings_back_desc">Backup image files to Dropbox</string>
+    <string name="settings_enable_auto_backup">Enable Auto Backup</string>
+    <string name="settings_auto_backup_enabled">Auto Backup Enabled</string>
+    <string name="settings_auto_backup_desc">Enable Auto Backup to Dropbox</string>
 
+    <string name="settings_restore">Restore</string>
+    <string name="settings_restore_desc">Restore image files from Dropbox</string>
+    <string name="settings_restore_running">Restore Running</string>
+    <string name="action_copy_image">Copy Image</string>
+    <string name="action_delete_image">Delete Image</string>
+    <string name="action_get_content">Pick Up</string>
+    <string name="action_move_image">Move</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="sure_to_delete_images">Delete Images?</string>
 
 </resources>

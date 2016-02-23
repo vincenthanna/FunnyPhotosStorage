@@ -1,13 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 20
+    compileSdkVersion 21
     buildToolsVersion "20.0.0"
-
     defaultConfig {
         applicationId "vh1981.com.funnyphotosstorage"
         minSdkVersion 16
-        targetSdkVersion 20
+        targetSdkVersion 21
         versionCode 1
         versionName "1.0"
     }
@@ -17,17 +16,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
-
-
-
-        packagingOptions {
-            exclude 'META-INF/LICENSE.txt'
-            exclude 'META-INF/NOTICE.txt'
-            exclude 'META-INF/LICENSE'
-            exclude 'META-INF/NOTICE'
-        }
-
-
+    packagingOptions {
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
+    }
+    productFlavors {
+    }
 }
 
 dependencies {
@@ -40,6 +36,7 @@ dependencies {
     compile files('libs/httpmime-4.0.3.jar')
     compile files('libs/json_simple-1.1.jar')
     compile files('libs/extra/android.jar')
-    compile "com.android.support:support-v4:20.0+"
+    compile 'com.android.support:support-v4:21.0+'
     testCompile 'junit:junit:4.12'
+    compile files('libs/dropbox-android-sdk-1.6.3.jar')
 }

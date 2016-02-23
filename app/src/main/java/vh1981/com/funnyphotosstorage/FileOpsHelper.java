@@ -83,7 +83,7 @@ public class FileOpsHelper {
      * @param file
      * @return
      */
-    public boolean isFile(File file)
+    public static boolean isFile(File file)
     {
         boolean result;
         if (file != null && file.exists() && file.isFile()) {

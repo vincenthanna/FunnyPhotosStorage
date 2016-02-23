@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:padding="10dp"
+    android:layout_height="match_parent"
+    android:descendantFocusability="blocksDescendants"
+    style="@style/AppTheme">
+    <TextView
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:id="@+id/tvtitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Title"
+        android:textSize="20dp"
+        />
+    <TextView
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:id="@+id/tvdesc"
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:text="Here goes to descriptions of menu"
+        android:textSize="12dp"
+        android:layout_below="@id/tvtitle"/>
+
+    <ProgressBar
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/progressBar"
+        android:layout_centerVertical="true"
+        android:layout_alignParentRight="true"
+        />
+
+    <Switch
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/switch1"
+        android:layout_centerVertical="true"
+        android:layout_alignParentRight="true" />
+</RelativeLayout>

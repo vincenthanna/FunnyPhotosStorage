@@ -7,5 +7,4 @@ import android.graphics.Bitmap;
  */
 public interface BitmapSupplier {
     Bitmap getBitmap(String filepath);
-    Bitmap getBitmap(int imageId);
 }

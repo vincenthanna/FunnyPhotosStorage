@@ -16,7 +16,7 @@ import static junit.framework.Assert.*;
  * UI에서 직접 이미지 처리동작을 위해 접근하는 클래스이다.
  */
 
-public class ImageManager implements BitmapSupplier {
+public class ImageManager {
     private static ImageManager _instance = null;
     private static Context _context;
     public static void setContext(Context context)
@@ -44,108 +44,63 @@ public class ImageManager implements BitmapSupplier {
         return _instance;
     }
 
-
-    /**
-     * 1. 이미지를 파일로 저장한다.
-     * 2. 이미지 파일 이름을 Images 테이블에 저장한다.
-     * 3. 이미지 파일과 태그를 ImageTags 테이블에 저장한다.
-     * @param bitmap
-     * @param tag
-     * @return
-     */
     boolean createImage(Bitmap bitmap, String tag)
     {
         // bitmap을 파일로 저장한다.
-        String imageFileName = _imgFileManager.createImageFile(bitmap);
-
-        // 이미지 파일 이름을 Images 테이블에 저장한다.
-        long imgId = _imgDatabaseManager.createImage(imageFileName);
-
-        // tag에 해당하는 tagId를 찾는다.
-        int tagId = _imgDatabaseManager.findTagId(tag);
-
-        if (tagId < 0) {
-            assert false;
-        }
-
-        // tagId - imagefilename 쌍을 저장한다.
-        if (_imgDatabaseManager.createImageTag((int)imgId, tag) != true) {
-            assert false;
-        }
-
-        return false;
+        String imageFileName = _imgFileManager.createImageFile(bitmap, tag);
+        return true;
     }
 
-    public ArrayList<String> getTags() {
-        return _imgDatabaseManager.getTags();
+    boolean removeImage(Image image)
+    {
+        return _imgFileManager.removeImageFile(image);
     }
 
-
-    public ImageContainer getImageContainer(int tagId) {
-        return _imgDatabaseManager.getImageContainer(tagId, this);
+    boolean changeImageTag(Image image, String tag)
+    {
+        return _imgFileManager.changeImageFileTag(image, tag);
     }
 
     public ImageContainer getImageContainer(String tag) {
-        int tagId = _imgDatabaseManager.findTagId(tag);
-        if (tagId < 0) {
-            assert false;
-        }
-        return _imgDatabaseManager.getImageContainer(tagId, this);
+        return _imgFileManager.getImageContainer(tag);
     }
 
-    /// BitmapSupplier 인터페이스 구현부:
-
-    /**
-     * Title : BitmapSupplier 인터페이스 구현 - imageId로 파일이름을 찾고 Bitmap 인스턴스를 리턴.
-     * @param imageId : Images 테이블에 들어있는 파일의 id
-     * @return : Bitmap 인스턴스
-     */
-    public Bitmap getBitmap(int imageId) {
-        String filepath = _imgDatabaseManager.findFilepath(imageId);
-        return _imgFileManager.getBitmap(filepath);
-    }
-
-    /**
-     * Title : BitmapSupplier 인터페이스 구현 - 이미지 파일을 열고 Bitmap을 리턴.
-     * @param filepath : 파일 경로
-     * @return : Bitmap 인스턴스
-     */
-    public Bitmap getBitmap(String filepath) {
-        return _imgFileManager.getBitmap(filepath);
-    }
-
-
-    /**
-     * Title : tag를 생성하는 함수
-     * @param tag : 생성할 tag 이름
-     * @return : 생성된 tag의 tagId
-     */
+    //////////////////////////////////////////////////////////////////////////////
+    /// tag 관련 함수들
+    //////////////////////////////////////////////////////////////////////////////
     public boolean addTag(String tag)
     {
         return _imgDatabaseManager.addTag(tag);
     }
 
-    public boolean removeTag(String tag) {
-        long tagId = _imgDatabaseManager.findTagId(tag);
-        if (tagId >= 0) {
-            return _imgDatabaseManager.removeTag(tagId);
-        }
-        assert false; // cannot happen!
-        return false;
+    public boolean removeTag(String tag)
+    {
+        return _imgDatabaseManager.removeTag(tag);
     }
 
-    public boolean removeTag(long tagId)
+    public boolean tagExists(String tag)
     {
-        return _imgDatabaseManager.removeTag(tagId);
+        return _imgDatabaseManager.tagExists(tag);
     }
 
-    public long findTagId(String tag)
+    public ArrayList<String> getTags()
     {
-        return _imgDatabaseManager.findTagId(tag);
+        return _imgDatabaseManager.getTags();
     }
 
-    public String findTag(int id)
+    //////////////////////////////////////////////////////////////////////////////
+    /// misc
+    //////////////////////////////////////////////////////////////////////////////
+    public String dbFilePath() {
+        return _imgDatabaseManager.dbFilePath();
+    }
+    public ArrayList<String> imageFiles()
     {
-        return _imgDatabaseManager.findTag(id);
+        return _imgFileManager.getImageFilesArray();
+    }
+
+    public void unloadBitmaps(String tagToRemain)
+    {
+        _imgFileManager.unloadBitmaps(tagToRemain);
     }
 }

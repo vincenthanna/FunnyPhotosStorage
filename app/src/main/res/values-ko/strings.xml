@@ -17,5 +17,22 @@
     <string name="tag_added">태그가 추가되었습니다 : </string>
     <string name="tag_exists">존재하는 태그 이름입니다.</string>
     <string name="sure_to_delete">정말로 삭제 하시겠습니까?</string>
+    <string name="settings_backup">파일 백업</string>
+    <string name="settings_back_desc">이미지 파일을 Dropbox로 백업합니다.</string>
+    <string name="settings_backup_running">백업 중...</string>
+    <string name="title_activity_settings">설정</string>
+    <string name="settings_enable_auto_backup">자동 백업 활성화</string>
+    <string name="settings_auto_backup_enabled">자동 백업 활성화됨</string>
+    <string name="settings_auto_backup_desc">이미지 파일을 자동으로 Dropbox에 백업하는 기능을 활성화 합니다</string>
+    <string name="settings_restore">복원</string>
+    <string name="settings_restore_desc">Dropbox로부터 이미지 파일을 복원합니다.</string>
+    <string name="settings_restore_running">복원 중...</string>
+    <string name="action_copy_image">이미지 복사</string>
+    <string name="action_delete_image">이미지 삭제</string>
+    <string name="action_move_image">이동</string>
+    <string name="action_get_content">선택</string>
+    <string name="action_cancel">취소</string>
+    <string name="action_delete">삭제</string>
+    <string name="sure_to_delete_images">삭제하시겠습니까?</string>
 
 </resources>

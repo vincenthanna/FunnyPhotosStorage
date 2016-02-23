@@ -8,6 +8,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -38,6 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import Consts.ActivityRequestType;
+import Defines.SampleData;
 import Utils.BitmapUtil;
 import Utils.ClipboardHelper;
 import Utils.DebugLog;
@@ -52,6 +55,12 @@ public class MainActivity extends Activity implements UIReloadDelegate{
     MainActivity _activity;
     ImageManager _imageManager;
     String _tagToRemove = "";
+    boolean _activityGetContent = false;
+
+    final static private String APP_KEY = "jb5r87iwgoambe7";
+    final static private String APP_SECRET = "dgq8h1ewnxvh8fs";
+    final static private String APP_DROPBOX_TOKEN = "dropbox_app_token";
+    private DropboxAPI<AndroidAuthSession> mDBApi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +79,9 @@ public class MainActivity extends Activity implements UIReloadDelegate{
         _imageManager = ImageManager.instance();
         BitmapUtil.setContext(getBaseContext());
 
+        if (getIntent().getAction() == Intent.ACTION_GET_CONTENT) { ///< 외부에서 입력된
+            _activityGetContent = true;
+        }
 
         // SwipeMenuListView init:
         SwipeMenuCreator creator = new SwipeMenuCreator() {
@@ -79,25 +91,6 @@ public class MainActivity extends Activity implements UIReloadDelegate{
 
                 switch (menu.getViewType()) {
                     case 0:
-                        /*
-                        // create "open" item
-                        SwipeMenuItem openItem = new SwipeMenuItem(
-                                getApplicationContext());
-                        // set item background
-                        openItem.setBackground(new ColorDrawable(Color.rgb(0xC9, 0xC9,
-                                0xCE)));
-                        // set item width
-                        openItem.setWidth(dp2px(90));
-                        // set item title
-                        openItem.setTitle("Open");
-                        // set item title fontsize
-                        openItem.setTitleSize(18);
-                        // set item title font color
-                        openItem.setTitleColor(Color.WHITE);
-                        // add to menu
-                        menu.addMenuItem(openItem);
-                        */
-
                         // create "delete" item
                         SwipeMenuItem deleteItem = new SwipeMenuItem(
                                 getApplicationContext());
@@ -118,7 +111,9 @@ public class MainActivity extends Activity implements UIReloadDelegate{
         };
 
         // set creator
-        _lvCat.setMenuCreator(creator);
+        if (!_activityGetContent) {
+            _lvCat.setMenuCreator(creator);
+        }
 
         _lvCat.setOnMenuItemClickListener(new SwipeMenuListView.OnMenuItemClickListener() {
             @Override
@@ -144,6 +139,18 @@ public class MainActivity extends Activity implements UIReloadDelegate{
                 return false;
             }
         });
+
+        BackupManager.setContext(MainActivity.this);
+
+        //ArrayList<String> str = _imageManager.imageFiles();
+        DebugLog.TRACE("test");
+
+        /*
+        SampleData.setContext(MainActivity.this);
+        SampleData data = SampleData.getInstance();
+        */
+
+
     }
     private int dp2px(int dp) {
         float scale = getResources().getDisplayMetrics().density;
@@ -159,7 +166,9 @@ public class MainActivity extends Activity implements UIReloadDelegate{
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        if (!_activityGetContent) {
+            getMenuInflater().inflate(R.menu.menu_main, menu);
+        }
         return true;
     }
 
@@ -176,7 +185,8 @@ public class MainActivity extends Activity implements UIReloadDelegate{
             }
             break;
             case R.id.action_settings: {
-
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
             }
             break;
             case R.id.action_add_tag: {
@@ -203,7 +213,30 @@ public class MainActivity extends Activity implements UIReloadDelegate{
     @Override
     protected void onResume() {
         super.onResume();
+        BackupManager.instance().dropboxAuthenticationResult();
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Intent intent = getIntent();
+        if (intent.getAction() == Intent.ACTION_GET_CONTENT) { ///< 외부에서 입력된
+            if (ActivityRequestType.GetContent == requestCode) {
+                // 실행시킨 Intent를 확인해야 한다. ===> 그냥 back으로 온 경우와 구별이 되어야 한다.
+                if (resultCode == Activity.RESULT_OK) {
+                    if (data != null) {
+                        setResult(Activity.RESULT_OK, data);
+                    } else {
+                        setResult(Activity.RESULT_CANCELED);
+                    }
+                    finish();
+                }
+            }
+        }
+        else if (ActivityRequestType.Normal == requestCode) {
+
+        }
+    }
+
 
     DialogInterface.OnClickListener _removeConfirmAlertClickListener = new DialogInterface.OnClickListener() {
         public void onClick(DialogInterface dialog, int which) {
@@ -214,10 +247,21 @@ public class MainActivity extends Activity implements UIReloadDelegate{
     private AdapterView.OnItemClickListener _lvCatItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position,  long l_position) {
+
+            Intent activityIntent = getIntent();
+
             String tag = _lvAdapter.getTagByPosition(position);
             Intent intent = new Intent(_activity, ImageGalleryActivity.class);
             intent.putExtra(ImageGalleryActivity.IE_TAG, tag);
-            startActivityForResult(intent, 0);
+            ImageManager.instance().unloadBitmaps(tag);
+            if (activityIntent.getAction() == Intent.ACTION_GET_CONTENT) {
+                intent.putExtra(ImageGalleryActivity.IE_ACTION_GET_CONTENT, 1);
+                startActivityForResult(intent, ActivityRequestType.GetContent);
+            }
+            else {
+                intent.putExtra(ImageGalleryActivity.IE_ACTION_GET_CONTENT, 0);
+                startActivityForResult(intent, ActivityRequestType.Normal);
+            }
         }
     };
 
@@ -234,23 +278,6 @@ public class MainActivity extends Activity implements UIReloadDelegate{
                     getResources().getString(R.string.no_image_in_clipboard), Toast.LENGTH_SHORT);
         }
         return;
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-        // 실행시킨 Intent를 확인해야 한다.
-        Intent intent = getIntent();
-
-        if (intent.getAction() == Intent.ACTION_GET_CONTENT) { ///< 외부에서 입력된
-            if (data != null) {
-                setResult(Activity.RESULT_OK, data);
-            }
-            else {
-                setResult(Activity.RESULT_CANCELED);
-            }
-            finish();
-        }
     }
 
     @Override

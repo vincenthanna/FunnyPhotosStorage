@@ -1,6 +1,9 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="vh1981.com.funnyphotosstorage.ImageGalleryActivity">
+    <item android:id="@+id/action_down_menu" android:title="@string/action_add_tag"
+        android:icon="@android:drawable/ic_menu_add"
+        android:orderInCategory="100" android:showAsAction="always" />
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
-        android:orderInCategory="100" android:showAsAction="never" />
+        android:orderInCategory="102" android:showAsAction="never" />
 </menu>

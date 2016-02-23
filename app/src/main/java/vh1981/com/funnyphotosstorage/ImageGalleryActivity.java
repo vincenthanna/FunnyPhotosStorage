@@ -2,65 +2,34 @@ package vh1981.com.funnyphotosstorage;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.Intent;
+import android.content.*;
 import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.view.ContextMenu;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.GridView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.TextView;
+import android.view.*;
+import android.widget.*;
 import PopupMenu.*;
-
 import java.util.ArrayList;
 
 import Consts.ActivityRequestType;
 import Utils.DebugLog;
 
-
 public class ImageGalleryActivity extends Activity {
-
+    // const :
     public static String IE_TAG = "TAG";
     public static String IE_INDEX = "INDEX";
     public static String IE_ACTION_GET_CONTENT = "GET_CONTENT";
-    public static String IE_ACTION_MULTIPLE_SELECT = "MULTIPLE_SELECT";
-    ImageContainer _imageContainer;
-    ImagesListGridAdapter _gridAdapter;
-    public enum Mode {
-        SINGLE_IMAGE_VIEW,
-        MULTIPLE_SELECT_MODE,
-    }
-    Mode _mode = Mode.SINGLE_IMAGE_VIEW;
-    public boolean multiSelectMode() {
-        return _mode == Mode.MULTIPLE_SELECT_MODE;
-    }
 
-    GridView _gridView = null;
-    ImageGalleryActivity _activity;
-
-    public GridView get_gridView() {
-        return _gridView;
-    }
-
+    // variables :
     String _tag;
     boolean _activityGetContent = false;
+    ImageContainer _imageContainer;
+    ImagesListGridAdapter _gridAdapter;
+    BottomMenuSheetDialog _bottomSheetDialog = null;
+    GridView _gridView = null;
+    ImageGalleryActivity _activity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,12 +44,8 @@ public class ImageGalleryActivity extends Activity {
         if (intent.getIntExtra(IE_ACTION_GET_CONTENT, 0) > 0) {
             _activityGetContent = true;
         }
-        DebugLog.TRACE("tag=" + _tag);
-        _imageContainer = ImageManager.instance().getImageContainer(_tag);
 
-        if (intent.getStringExtra(IE_ACTION_MULTIPLE_SELECT) != null) {
-            _mode = Mode.MULTIPLE_SELECT_MODE;
-        }
+        _imageContainer = ImageManager.instance().getImageContainer(_tag);
 
         _gridView = (GridView) findViewById(R.id.gridImageGallery);
 
@@ -88,34 +53,24 @@ public class ImageGalleryActivity extends Activity {
         _gridAdapter.set_imageContainer(_imageContainer);
 
         _gridView.setAdapter(_gridAdapter);
-
         _gridView.setOnItemClickListener(_gridViewItemClickListener);
 
         setTitleByMode();
 
-        registerForContextMenu(_gridView);
-
-        if (_mode == Mode.MULTIPLE_SELECT_MODE) {
-            startMultipleSelectMode();
+        if (!_activityGetContent) {
+            //Registers a context menu to be shown for the given view
+            registerForContextMenu(_gridView);
         }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        setTitleByMode();
-        switch(_mode) {
-            case SINGLE_IMAGE_VIEW:
-                getActionBar().setDisplayShowHomeEnabled(true);
-                getMenuInflater().inflate(R.menu.menu_image_gallery, menu);
-                _imageContainer.checkClear();
-                return true;
-            case MULTIPLE_SELECT_MODE:
-                getActionBar().setDisplayShowHomeEnabled(false);
-                getMenuInflater().inflate(R.menu.menu_image_gallery_multiselect, menu);
-                _imageContainer.checkClear();
-                return true;
+        if (!_activityGetContent) {
+            getMenuInflater().inflate(R.menu.menu_image_gallery, menu);
         }
+
+        _imageContainer.checkClear();
         return true;
     }
 
@@ -127,55 +82,56 @@ public class ImageGalleryActivity extends Activity {
         int id = item.getItemId();
 
         if (id == R.id.action_settings) {
-            return true;
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
         }
         else if (id == R.id.action_down_menu) {
-            ////////////////////////////////////////////////////////////////////////
-
-            View view = getLayoutInflater().inflate (R.layout.image_gallery_bottom_sheet, null);
-            final ListView lv = (ListView) view.findViewById( R.id.lv);
 
             ArrayList<PopupMenuItem> popupMenus = new ArrayList<PopupMenuItem>();
             popupMenus.add(new PopupMenuItem(getResources().getString(R.string.action_move_image), "", android.R.drawable.ic_menu_directions));
             popupMenus.add(new PopupMenuItem(getResources().getString(R.string.action_delete), "", android.R.drawable.ic_menu_delete));
-            lv.setAdapter(new PopupMenuAdapter(getBaseContext(), R.layout.image_gallery_popup_menu_item, this, popupMenus));
 
-            final Dialog mBottomSheetDialog = new Dialog (ImageGalleryActivity.this,
-                    R.style.MaterialDialogSheet);
-            mBottomSheetDialog.setContentView (view);
-            mBottomSheetDialog.setCancelable (true);
-            mBottomSheetDialog.getWindow ().setLayout (LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT);
-
-            mBottomSheetDialog.getWindow ().setGravity (Gravity.BOTTOM);
-            mBottomSheetDialog.show ();
-
-            ////////////////////////////////////////////////////////////////////////
+            AdapterView.OnItemClickListener listener = new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Intent intent = new Intent(_activity, MultiSelImageGalleryActivity.class);
+                    intent.putExtra(MultiSelImageGalleryActivity.IE_TAG, _tag);
+                    intent.putExtra(MultiSelImageGalleryActivity.IE_INDEX, position);
+                    switch(position) {
+                        case 0:
+                            intent.putExtra(MultiSelImageGalleryActivity.IE_MODE, MultiSelImageGalleryActivity.IE_MODE_MOVE);
+                            break;
+                        case 1:
+                            intent.putExtra(MultiSelImageGalleryActivity.IE_MODE, MultiSelImageGalleryActivity.IE_MODE_DELETE);
+                            break;
+                        default:
+                            break;
+                    }
+                    _bottomSheetDialog.hide();
+                    intent.putExtra(ImageGalleryActivity.IE_ACTION_GET_CONTENT, 0);
+                    startActivityForResult(intent, ActivityRequestType.Normal);
+                }
+            };
+            _bottomSheetDialog = new BottomMenuSheetDialog(ImageGalleryActivity.this, popupMenus);
+            _bottomSheetDialog.setListViewItemClickListener(listener);
+            _bottomSheetDialog.show();
         }
-        else if (id == R.id.action_delete_image) {
-            _mode = Mode.MULTIPLE_SELECT_MODE;
-            invalidateOptionsMenu();
-            startMultipleSelectMode();
-        }
-        else if (id == R.id.action_cancel)
-        {
-            _mode = Mode.SINGLE_IMAGE_VIEW;
-            _imageContainer.checkClear();
-            invalidateOptionsMenu();
-            stopMultipleSelectMode();
-        }
-
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.imagegallertview_contextmenu, menu);
+        if (!_activityGetContent) {
+            MenuInflater inflater = getMenuInflater();
+            inflater.inflate(R.menu.imagegallertview_contextmenu, menu);
+        }
     }
 
-    /// item을 오래 눌렀을 때 :
+    /*
+     *Called when the context menu for this view is being built.
+     * It is not safe to hold onto the menu after this method returns.
+     */
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
@@ -206,9 +162,11 @@ public class ImageGalleryActivity extends Activity {
                 finish();
             }
         }
-
-        /// 특정 조건에서만
-//        _gridAdapter.notifyDataSetChanged();
+        else {
+            _imageContainer = ImageManager.instance().getImageContainer(_tag);
+            _gridAdapter.set_imageContainer(_imageContainer);
+            _gridAdapter.notifyDataSetChanged();
+        }
     }
 
     /**
@@ -236,29 +194,18 @@ public class ImageGalleryActivity extends Activity {
     AdapterView.OnItemClickListener _gridViewItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            if (_mode != Mode.MULTIPLE_SELECT_MODE) {
 
-                DebugLog.TRACE("position=" + position);
-
-                Intent intentFrom = getIntent();
-                // 내부 intent이면 full화면으로 이동
-                Intent intent = new Intent(_activity, SingleImageViewActivity.class);
-                intent.putExtra(ImageGalleryActivity.IE_TAG, _tag);
-                intent.putExtra(ImageGalleryActivity.IE_INDEX, position);
-                if (_activityGetContent) {
-                    intent.putExtra(ImageGalleryActivity.IE_ACTION_GET_CONTENT, 1);
-                    startActivityForResult(intent, ActivityRequestType.GetContent);
-                } else {
-                    intent.putExtra(ImageGalleryActivity.IE_ACTION_GET_CONTENT, 0);
-                    startActivityForResult(intent, ActivityRequestType.Normal);
-                }
-            }
-            else {
-                _imageContainer.get(position).checkToggle();
-                int visiblePosition = _gridView.getFirstVisiblePosition();
-                View target = _gridView.getChildAt(position - visiblePosition);
-                ImageGalleryItemLayout layout = (ImageGalleryItemLayout) _gridView.getAdapter().getView(position, target, _gridView);
-                layout.transition(false);
+            Intent intentFrom = getIntent();
+            // 내부 intent이면 full화면으로 이동
+            Intent intent = new Intent(_activity, SingleImageViewActivity.class);
+            intent.putExtra(ImageGalleryActivity.IE_TAG, _tag);
+            intent.putExtra(ImageGalleryActivity.IE_INDEX, position);
+            if (_activityGetContent) {
+                intent.putExtra(ImageGalleryActivity.IE_ACTION_GET_CONTENT, 1);
+                startActivityForResult(intent, ActivityRequestType.GetContent);
+            } else {
+                intent.putExtra(ImageGalleryActivity.IE_ACTION_GET_CONTENT, 0);
+                startActivityForResult(intent, ActivityRequestType.Normal);
             }
         }
     };
@@ -277,37 +224,14 @@ public class ImageGalleryActivity extends Activity {
 
     boolean deleteImage(Image img) {
         boolean succeeded = ImageManager.instance().removeImage(img);
-        _imageContainer.removeImage(img);
         _gridAdapter.notifyDataSetChanged();
         return succeeded;
     }
 
-    void startMultipleSelectMode() {
-
-    }
-
-    void stopMultipleSelectMode()
-    {
-        _gridAdapter.notifyDataSetChanged();
-        _gridView.setAdapter(_gridAdapter);
-    }
-
     void setTitleByMode()
     {
-        String title;
-        switch(_mode) {
-            case MULTIPLE_SELECT_MODE:
-                title = "";
-                break;
-            case SINGLE_IMAGE_VIEW:
-                title = getResources().getString(R.string.title_activity_image_gallery);
-                title += " - " + _tag;
-                break;
-            default:
-                title = getResources().getString(R.string.title_activity_image_gallery);
-                title += " - " + _tag;
-                break;
-        }
+        String title = getResources().getString(R.string.title_activity_image_gallery);
+        title += " - " + _tag;
         setTitle(title);
     }
 }
@@ -335,12 +259,12 @@ class ImagesListGridAdapter extends ArrayAdapter
     @Override
     public View getView(int position, View convertView, ViewGroup parent)
     {
-        ImageGalleryItemLayout imageGalleryItemLayout = null;
+        ImageGalleryItemLayout imageGalleryItemLayout;
         if (convertView == null) {
             convertView = new ImageGalleryItemLayout(context, _activity);
         }
         imageGalleryItemLayout = (ImageGalleryItemLayout) convertView;
-        imageGalleryItemLayout.setImage(_imageContainer.get(position), _activity.multiSelectMode());
+        imageGalleryItemLayout.setImage(_imageContainer.get(position), false);
 
         return convertView;
     }

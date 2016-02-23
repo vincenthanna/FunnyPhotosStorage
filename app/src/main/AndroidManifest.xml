@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="vh1981.com.funnyphotosstorage" >
+    package="vh1981.com.funnyphotosstorage">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -10,7 +10,7 @@
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name">
@@ -42,7 +42,7 @@
         </activity>
         <activity
             android:name=".NewImageActivity"
-            android:label="@string/title_activity_new_image" >
+            android:label="@string/title_activity_new_image">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
 
@@ -53,13 +53,43 @@
         </activity>
         <activity
             android:name=".ImageGalleryActivity"
-            android:label="@string/title_activity_image_gallery" >
-        </activity>
+            android:configChanges="orientation|screenSize"
+            android:label="@string/title_activity_image_gallery"></activity>
         <activity
             android:name=".SingleImageViewActivity"
             android:configChanges="orientation|screenSize"
-            android:label="@string/title_activity_single_image_view" >
+            android:label="@string/title_activity_single_image_view"></activity>
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings"></activity>
+        <activity
+            android:name="com.dropbox.client2.android.AuthActivity"
+            android:configChanges="orientation|keyboard"
+            android:launchMode="singleTask">
+            <intent-filter>
+
+                <!-- Change this to be db- followed by your app key -->
+                <data android:scheme="db-jb5r87iwgoambe7" />
+
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="vh1981.com.funnyphotosstorage.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
+
+        <activity android:name=".MultiSelImageGalleryActivity"
+            android:configChanges="orientation|screenSize"></activity>
     </application>
 
 </manifest>

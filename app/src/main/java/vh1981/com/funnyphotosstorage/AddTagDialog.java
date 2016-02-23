@@ -79,6 +79,7 @@ public class AddTagDialog extends Dialog {
             @Override
             public void onClick(View view) {
                 _tag = _editText.getText().toString();
+                if (_tag.trim().length() == 0) return; // 비어있으면 닫히지 않는다.
                 addTag(_tag);
                 dismiss();
             }
@@ -98,7 +99,7 @@ public class AddTagDialog extends Dialog {
             notifyDelegates();
         }
         else {
-            if (ImageManager.instance().findTagId(_tag) >= 0) {
+            if (ImageManager.instance().tagExists(_tag) == true) {
                 UIUtils.showToast(_context, _context.getResources().getString(R.string.tag_exists), Toast.LENGTH_SHORT);
             }
             else {

@@ -21,20 +21,10 @@ public class ImageManagerTest extends AndroidTestCase {
 
     public void testAddDeleteTag() {
         _imageManager.removeTag(_testTag);
+        long id = -1;
 
         if (_imageManager.addTag(_testTag) == false) {
-            fail("");
-        }
-
-        long id = _imageManager.findTagId(_testTag);
-        if (id < 0) {
             fail();
         }
-
-        if (!_imageManager.findTag((int) id).equals(_testTag)) {
-            fail();
-        }
-
-        _imageManager.removeTag(id);
     }
 }
