@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -16,6 +17,14 @@ public class SettingsListViewItem extends BaseListViewItem {
 
     TextView _tvTitle;
     TextView _tvDescription;
+    enum SHOW_STATUS {
+        SHOW_DEFAULT,
+        SHOW_STOP,
+        SHOW_RUNNING,
+        SHOW_AUTO_BACKUP,
+    };
+
+    SHOW_STATUS _showStatus = SHOW_STATUS.SHOW_DEFAULT;
 
     /// 택 1
     ProgressBar _progressBar;
@@ -53,32 +62,46 @@ public class SettingsListViewItem extends BaseListViewItem {
         // 기본은 모두 가린다.
         _progressBar.setVisibility(View.INVISIBLE);
         _switch.setVisibility(View.INVISIBLE);
+        _showStatus = SHOW_STATUS.SHOW_DEFAULT;
     }
 
     public void showStop()
     {
-        _tvTitle.setText(_context.getResources().getString(R.string.settings_backup));
-        _tvDescription.setText(_context.getResources().getString(R.string.settings_back_desc));
-        _progressBar.setVisibility(View.INVISIBLE);
-        _tvDescription.setEnabled(true);
-        _tvTitle.setEnabled(true);
-        _switch.setVisibility(View.INVISIBLE);
+        if (_showStatus != SHOW_STATUS.SHOW_STOP) {
+            _tvTitle.setText(_context.getResources().getString(R.string.settings_backup_restore));
+            _tvDescription.setText(_context.getResources().getString(R.string.settings_backup_restore_desc));
+            _progressBar.setVisibility(View.INVISIBLE);
+            _tvDescription.setEnabled(true);
+            _tvTitle.setEnabled(true);
+            _switch.setVisibility(View.INVISIBLE);
+            _showStatus = SHOW_STATUS.SHOW_STOP;
+        }
     }
 
-    public void showRunning()
+    public void showRunning(BackupTask.JOB job)
     {
-        _tvTitle.setText(_context.getResources().getString(R.string.settings_backup_running));
-        _tvDescription.setText(_context.getResources().getString(R.string.settings_back_desc));
-        _progressBar.setVisibility(View.VISIBLE);
-        _tvDescription.setEnabled(false);
-        _tvTitle.setEnabled(false);
-        _switch.setVisibility(View.INVISIBLE);
+        if (_showStatus != SHOW_STATUS.SHOW_RUNNING) {
+            switch(job) {
+                case BACKUP:
+                    _tvTitle.setText(_context.getResources().getString(R.string.settings_backup_running));
+                    break;
+                case RESTORE:
+                    _tvTitle.setText(_context.getResources().getString(R.string.settings_restore_running));
+            }
+
+            _tvDescription.setText(_context.getResources().getString(R.string.settings_back_desc));
+            _progressBar.setVisibility(View.VISIBLE);
+            _tvDescription.setEnabled(false);
+            _tvTitle.setEnabled(false);
+            _switch.setVisibility(View.INVISIBLE);
+            _showStatus = SHOW_STATUS.SHOW_RUNNING;
+        }
     }
 
-    public void showRestore()
+    public void showRestore(boolean enabled)
     {
-        _tvTitle.setText(_context.getResources().getString(R.string.settings_backup_running));
-        _tvDescription.setText(_context.getResources().getString(R.string.settings_back_desc));
+        _tvTitle.setText(_context.getResources().getString(R.string.settings_restore));
+        _tvDescription.setText(_context.getResources().getString(R.string.settings_restore_desc));
         _progressBar.setVisibility(View.VISIBLE);
         _tvDescription.setEnabled(false);
         _tvTitle.setEnabled(false);
@@ -87,10 +110,19 @@ public class SettingsListViewItem extends BaseListViewItem {
 
     public void showAutoBackup(boolean on)
     {
-        _tvTitle.setText(_context.getResources().getString(R.string.settings_enable_auto_backup));
-        _tvDescription.setText(_context.getResources().getString(R.string.settings_auto_backup_desc));
-        _progressBar.setVisibility(View.INVISIBLE);
-        _switch.setVisibility(View.VISIBLE);
-        _switch.setChecked(on);
+        if (_showStatus != SHOW_STATUS.SHOW_AUTO_BACKUP) {
+            _tvTitle.setText(_context.getResources().getString(R.string.settings_enable_auto_backup));
+            _tvDescription.setText(_context.getResources().getString(R.string.settings_auto_backup_desc));
+            _progressBar.setVisibility(View.INVISIBLE);
+            _switch.setVisibility(View.VISIBLE);
+            _switch.setChecked(on);
+            _showStatus = SHOW_STATUS.SHOW_AUTO_BACKUP;
+            _switch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    MySharedPreferences.instance().set_autoBackupEnabled(isChecked);
+                }
+            });
+        }
     }
 }

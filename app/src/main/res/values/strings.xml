@@ -35,5 +35,8 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
     <string name="sure_to_delete_images">Delete Images?</string>
+    <string name="action_change_tag">Change Tag</string>
+    <string name="settings_backup_restore">Backup/Restore</string>
+    <string name="settings_backup_restore_desc">Backup image files to Dropbox / Restore image files from Dropbox</string>
 
 </resources>

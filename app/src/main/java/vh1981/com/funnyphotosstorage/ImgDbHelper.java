@@ -10,7 +10,7 @@ import android.os.Bundle;
 import android.provider.BaseColumns;
 
 public class ImgDbHelper extends SQLiteOpenHelper {
-    public static final int DATABASE_VERSION = 1;
+    public static final int DATABASE_VERSION = 2;
     public static final String DATABASE_NAME = "imagewithtags.db";
 
     public ImgDbHelper(Context context) {
@@ -33,6 +33,16 @@ public class ImgDbHelper extends SQLiteOpenHelper {
         public static final String COLUMN_NAME_TAGNAME = "tagname"; //태그 이름
     }
 
+    public static final class DeletedFilesEntry implements BaseColumns {
+        public static final String TABLE_NAME = "deletedFiles";
+        public static final String COLUMN_NAME_FILENAME= "filename"; //파일명
+    }
+
+    public static final class ModifiedFilesEntry implements BaseColumns {
+        public static final String TABLE_NAME = "modifiedFiles";
+        public static final String COLUMN_NAME_FILENAME= "filename"; //파일명
+    }
+
     // sql create string :
     private static final String SQL_CREATE_IMAGES = "CREATE TABLE "
             + ImagesEntry.TABLE_NAME + " ("
@@ -50,6 +60,16 @@ public class ImgDbHelper extends SQLiteOpenHelper {
             + TagsEntry._ID + " INTEGER PRIMARY KEY,"
             + TagsEntry.COLUMN_NAME_TAGNAME + " TEXT " + " NOT NULL UNIQUE " + " )";
 
+    private static final String SQL_CREATE_DELETEDFILES = "CREATE TABLE "
+            + DeletedFilesEntry.TABLE_NAME + " ("
+            + DeletedFilesEntry._ID + " INTEGER PRIMARY KEY,"
+            + DeletedFilesEntry.COLUMN_NAME_FILENAME + " TEXT " + " NOT NULL UNIQUE " + " )";
+
+    private static final String SQL_CREATE_MODIFIEDFILES = "CREATE TABLE "
+            + ModifiedFilesEntry.TABLE_NAME + " ("
+            + ModifiedFilesEntry._ID + " INTEGER PRIMARY KEY,"
+            + ModifiedFilesEntry.COLUMN_NAME_FILENAME + " TEXT " + " NOT NULL UNIQUE " + " )";
+
     // sql delete string:
     private static final String SQL_DELETE_IMAGES = "DROP TABLE IF EXISTS "
             + ImagesEntry.TABLE_NAME;
@@ -57,6 +77,10 @@ public class ImgDbHelper extends SQLiteOpenHelper {
             + ImageTagEntry.TABLE_NAME;
     private static final String SQL_DELETE_TAGS = "DROP TABLE IF EXISTS "
             + TagsEntry.TABLE_NAME;
+    private static final String SQL_DELETE_DELETEDFILES = "DROP TABLE IF EXISTS "
+            + DeletedFilesEntry.TABLE_NAME;
+    private static final String SQL_DELETE_MODIFIEDFILES = "DROP TABLE IF EXISTS "
+            + ModifiedFilesEntry.TABLE_NAME;
 
     /// override functions:
     @Override
@@ -65,6 +89,8 @@ public class ImgDbHelper extends SQLiteOpenHelper {
         arg0.execSQL(SQL_CREATE_IMAGES);
         arg0.execSQL(SQL_CREATE_IMAGETAG);
         arg0.execSQL(SQL_CREATE_TAGS);
+        arg0.execSQL(SQL_CREATE_DELETEDFILES);
+        arg0.execSQL(SQL_CREATE_MODIFIEDFILES);
     }
 
     @Override
@@ -73,16 +99,8 @@ public class ImgDbHelper extends SQLiteOpenHelper {
         arg0.execSQL(SQL_DELETE_IMAGES);
         arg0.execSQL(SQL_DELETE_IMAGETAG);
         arg0.execSQL(SQL_DELETE_TAGS);
+        arg0.execSQL(SQL_DELETE_DELETEDFILES);
+        arg0.execSQL(SQL_DELETE_MODIFIEDFILES);
         onCreate(arg0);
-    }
-
-    // access functions used by ImageDatabaseManager :
-    public boolean addImage(String filename, int tagId){
-        return false;
-    }
-
-    public boolean addTag(String tag)
-    {
-        return false; // in case of duplication or database error...
     }
 }

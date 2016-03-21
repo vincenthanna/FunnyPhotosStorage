@@ -67,6 +67,8 @@ public class MainActivity extends Activity implements UIReloadDelegate{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ImageManager.setContext(this.getBaseContext());
+        MySharedPreferences.setContext(this.getBaseContext());
+        MySharedPreferences.instance().set_intentAction(getIntent().getAction());
 
         _lvCat = (SwipeMenuListView) findViewById(R.id.lvmain);
         _lvAdapter = new MyListAdapter(getBaseContext(), R.layout.lvmainitemview);
@@ -141,9 +143,15 @@ public class MainActivity extends Activity implements UIReloadDelegate{
         });
 
         BackupManager.setContext(MainActivity.this);
+        if (getIntent().getAction() != Intent.ACTION_GET_CONTENT) {
+            if (!BackupManager.instance().isRunning()) {
+                BackupManager.instance().start();
+            }
+        }
 
         //ArrayList<String> str = _imageManager.imageFiles();
         DebugLog.TRACE("test");
+
 
         /*
         SampleData.setContext(MainActivity.this);

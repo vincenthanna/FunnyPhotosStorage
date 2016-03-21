@@ -2,6 +2,8 @@ package vh1981.com.funnyphotosstorage;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Path;
@@ -36,8 +38,23 @@ public class ImageDatabaseManager {
     private ImageDatabaseManager()
     {
         _dbHelper = new ImgDbHelper(_context);
-        initDefaultTags();
+        if (needToInitDefaultTags()) {
+            initDefaultTags();
+        }
     }
+
+    private boolean needToInitDefaultTags()
+    {
+        if (MySharedPreferences.instance().get_intentAction() == Intent.ACTION_SEND) {
+            return false;
+        }
+
+        if (MySharedPreferences.instance().get_intentAction() == Intent.ACTION_GET_CONTENT) {
+            return false;
+        }
+        return true;
+    }
+
 
     public static ImageDatabaseManager getInstance() {
         if (_instance == null) {
@@ -113,15 +130,13 @@ public class ImageDatabaseManager {
         String query = "select " + ImgDbHelper.TagsEntry.COLUMN_NAME_TAGNAME + " from " + ImgDbHelper.TagsEntry.TABLE_NAME;
         Cursor c = db.rawQuery(query, null);
         assert c != null;
-        if (c != null) {
-            if (c.moveToFirst()) {
-                do {
-                    String tag = c.getString(c.getColumnIndex(ImgDbHelper.TagsEntry.COLUMN_NAME_TAGNAME));
-                    tags.add(tag);
-                } while (c.moveToNext());
-            }
-            c.close();
+        if (c.moveToFirst()) {
+            do {
+                String tag = c.getString(c.getColumnIndex(ImgDbHelper.TagsEntry.COLUMN_NAME_TAGNAME));
+                tags.add(tag);
+            } while (c.moveToNext());
         }
+        c.close();
         return tags;
     }
 
@@ -152,6 +167,94 @@ public class ImageDatabaseManager {
         return tagId;
     }
 
+    public long insertDeletedFilename(Image image)
+    {
+        SQLiteDatabase db = _dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(ImgDbHelper.DeletedFilesEntry.COLUMN_NAME_FILENAME, image.get_filename());
+        long ret = db.insert(ImgDbHelper.DeletedFilesEntry.TABLE_NAME, null, values);
+        if (ret < 0) {
+            assert false;
+        }
+        return ret;
+    }
+
+    public boolean dropDeletedFilename(String filename)
+    {
+        SQLiteDatabase db = _dbHelper.getWritableDatabase();
+        String whereClause = ImgDbHelper.DeletedFilesEntry.COLUMN_NAME_FILENAME + " = ?";
+        String[] whereArgs = new String[]{filename};
+        int cnt = db.delete(ImgDbHelper.DeletedFilesEntry.TABLE_NAME, whereClause, whereArgs);
+        if (cnt == 0) {
+            DebugLog.TRACE("Error!");
+            assert false;
+        }
+        return true;
+    }
+
+    public ArrayList<String> getDeletedFilenames()
+    {
+        ArrayList<String> deletedFilenames = new ArrayList<String>();
+        SQLiteDatabase db = _dbHelper.getWritableDatabase();
+        String query = "select " + ImgDbHelper.DeletedFilesEntry.COLUMN_NAME_FILENAME+ " from " + ImgDbHelper.DeletedFilesEntry.TABLE_NAME;
+        Cursor c = db.rawQuery(query, null);
+        assert c != null;
+        if (c.moveToFirst()) {
+            do {
+                String filename = c.getString(c.getColumnIndex(ImgDbHelper.DeletedFilesEntry.COLUMN_NAME_FILENAME));
+                deletedFilenames.add(filename);
+            } while (c.moveToNext());
+        }
+        c.close();
+        return deletedFilenames;
+    }
+
+    public long insertModifiedFilename(Image image)
+    {
+        SQLiteDatabase db = _dbHelper.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(ImgDbHelper.ModifiedFilesEntry.COLUMN_NAME_FILENAME, image.get_filename());
+        long ret = db.insert(ImgDbHelper.ModifiedFilesEntry.TABLE_NAME, null, values);
+        if (ret < 0) {
+            assert false;
+        }
+        return ret;
+    }
+
+    public boolean dropModifiedFilename(String filename)
+    {
+        try {
+            SQLiteDatabase db = _dbHelper.getWritableDatabase();
+            String whereClause = ImgDbHelper.ModifiedFilesEntry.COLUMN_NAME_FILENAME + " = ?";
+            String[] whereArgs = new String[]{filename};
+            int cnt = db.delete(ImgDbHelper.ModifiedFilesEntry.TABLE_NAME, whereClause, whereArgs);
+            if (cnt == 0) {
+                DebugLog.TRACE("Error!");
+                assert false;
+            }
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    public ArrayList<String> getModifiedFilenames()
+    {
+        ArrayList<String> filenames = new ArrayList<String>();
+        SQLiteDatabase db = _dbHelper.getWritableDatabase();
+        String query = "select " + ImgDbHelper.ModifiedFilesEntry.COLUMN_NAME_FILENAME+ " from " + ImgDbHelper.ModifiedFilesEntry.TABLE_NAME;
+        Cursor c = db.rawQuery(query, null);
+        assert c != null;
+        if (c.moveToFirst()) {
+            do {
+                String filename = c.getString(c.getColumnIndex(ImgDbHelper.DeletedFilesEntry.COLUMN_NAME_FILENAME));
+                filenames.add(filename);
+            } while (c.moveToNext());
+        }
+        c.close();
+        return filenames;
+    }
 
     /*
     public long createImage(String filepath)

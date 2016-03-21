@@ -142,6 +142,22 @@ public class ImageFileManager implements BitmapSupplier {
         }
     }
 
+    public String getTagFromImageFile(String fileName)
+    {
+        ExifInterface exif = null;
+        try {
+            exif = new ExifInterface(directoryPath(fileName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (exif != null) {
+            String tag = exif.getAttribute(ExifInterface.TAG_MODEL);
+            return tag;
+        }
+        return null;
+    }
+
     ////////////////////////////////////////////////////////////////////
     /// BitmapSupplier 인터페이스 구현부:
     ////////////////////////////////////////////////////////////////////

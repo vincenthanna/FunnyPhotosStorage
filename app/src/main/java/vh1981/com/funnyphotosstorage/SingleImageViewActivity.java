@@ -38,6 +38,11 @@ public class SingleImageViewActivity extends FragmentActivity implements SwipeIm
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_single_image_view);
+
+        ImageManager.setContext(getBaseContext());
+        MySharedPreferences.setContext(this.getBaseContext());
+        MySharedPreferences.instance().set_intentAction(getIntent().getAction());
+
         Intent intent = getIntent();
 
         _activity = this;
@@ -95,6 +100,11 @@ public class SingleImageViewActivity extends FragmentActivity implements SwipeIm
                 startShareActivity();
             }
         });
+        _shareButton.setText(getResources().getString(R.string.action_share));
+
+        if (_fromGetContent) {
+            _shareButton.setVisibility(View.INVISIBLE);
+        }
 
         // title 설정 :
         String title = getResources().getString(R.string.title_activity_single_image_view);

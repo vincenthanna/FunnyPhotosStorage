@@ -1,6 +1,7 @@
 package vh1981.com.funnyphotosstorage;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.util.Pair;
 
@@ -26,6 +27,10 @@ public class ImageManager {
 
     private ImageFileManager _imgFileManager;
     private ImageDatabaseManager _imgDatabaseManager;
+    boolean _needUpdate = false;
+    public void setNeedUpdate() {
+        _needUpdate = true;
+    }
 
     private ImageManager()
     {
@@ -46,6 +51,7 @@ public class ImageManager {
 
     boolean createImage(Bitmap bitmap, String tag)
     {
+        updateChanged();
         // bitmap을 파일로 저장한다.
         String imageFileName = _imgFileManager.createImageFile(bitmap, tag);
         return true;
@@ -53,15 +59,20 @@ public class ImageManager {
 
     boolean removeImage(Image image)
     {
+        updateChanged();
+        _imgDatabaseManager.insertDeletedFilename(image);
         return _imgFileManager.removeImageFile(image);
     }
 
     boolean changeImageTag(Image image, String tag)
     {
+        updateChanged();
+        _imgDatabaseManager.insertModifiedFilename(image);
         return _imgFileManager.changeImageFileTag(image, tag);
     }
 
     public ImageContainer getImageContainer(String tag) {
+        rebuildIfNeeded();
         return _imgFileManager.getImageContainer(tag);
     }
 
@@ -88,9 +99,58 @@ public class ImageManager {
         return _imgDatabaseManager.getTags();
     }
 
+    public ArrayList<String> getDeletedFilenames()
+    {
+        return _imgDatabaseManager.getDeletedFilenames();
+    }
+
+    public void dropDeletedFilename(String filename) {
+        _imgDatabaseManager.dropDeletedFilename(filename);
+    }
+
+    public ArrayList<String> getModifiedFilenames()
+    {
+        return _imgDatabaseManager.getModifiedFilenames();
+    }
+
+    public void dropModifiedFilename(String filename) {
+        _imgDatabaseManager.dropModifiedFilename(filename);
+    }
+
+    public String getTagFromImageFile(String fileName)
+    {
+        return _imgFileManager.getTagFromImageFile(fileName);
+    }
+
+    public void rebuildIfNeeded() {
+        if (_needUpdate) {
+            rebuild();
+        }
+    }
+
+    public void rebuild() {
+        _imgFileManager.updateImageFileList();
+        _needUpdate = false;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
+    /// backup
+    int _changedCount = 0;
+    final static int UPDATE_THRESHOLD = 5;
+    void updateChanged()
+    {
+        _changedCount++;
+        if (_changedCount > UPDATE_THRESHOLD) {
+            if (MySharedPreferences.instance().get_autoBackupEnabled()) {
+                BackupManager.instance().putTask(BackupTask.JOB.BACKUP);
+            }
+            _changedCount = 0;
+        }
+    }
+
     //////////////////////////////////////////////////////////////////////////////
     /// misc
-    //////////////////////////////////////////////////////////////////////////////
+
     public String dbFilePath() {
         return _imgDatabaseManager.dbFilePath();
     }

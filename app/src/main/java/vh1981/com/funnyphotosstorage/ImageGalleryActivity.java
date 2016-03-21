@@ -135,7 +135,8 @@ public class ImageGalleryActivity extends Activity {
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        int index = info.position;
+        final int index = info.position;
+        final Image selectedImage = _imageContainer.get(index);
         switch (item.getItemId()) {
             case R.id.action_copy_image: {
                 Image img = _imageContainer.get(index);
@@ -147,6 +148,39 @@ public class ImageGalleryActivity extends Activity {
                 deleteImage(img);
             }
             break;
+            case R.id.action_change_tag: {
+                final ArrayList<PopupMenuItem> popupMenus = new ArrayList<PopupMenuItem>();
+                for (String tag : ImageManager.instance().getTags()) {
+                    if (_tag.equals(tag) == false) {
+                        PopupMenuItem popupMenuItem = new PopupMenuItem(tag, "", android.R.drawable.ic_menu_directions);
+                        popupMenuItem.set_data(tag);
+                        popupMenus.add(popupMenuItem);
+                    }
+                }
+
+                final BottomMenuSheetDialog dialog = new BottomMenuSheetDialog(ImageGalleryActivity.this, popupMenus);
+
+                AdapterView.OnItemClickListener listener = new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        PopupMenuItem item = popupMenus.get(position);
+                        String tag = (String) item.get_data();
+                        ImageContainer container = _imageContainer.copy(true);
+
+                        if (ImageManager.instance().changeImageTag(selectedImage, tag) == false) {
+                            DebugLog.TRACE("can't change tag : file=" + selectedImage.get_filename() + " " + "tag=" + tag);
+                        }
+                        // tag가 변경된 이미지가 있으므로 다시 불러와야 한다.
+                        _imageContainer = ImageManager.instance().getImageContainer(_tag);
+                        _gridAdapter.set_imageContainer(_imageContainer);
+                        _gridAdapter.notifyDataSetChanged();
+                        dialog.hide();
+                    }
+                };
+
+                dialog.setListViewItemClickListener(listener);
+                dialog.show();
+            }
             default:
                 return super.onContextItemSelected(item);
         }

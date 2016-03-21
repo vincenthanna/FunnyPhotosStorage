@@ -34,5 +34,8 @@
     <string name="action_cancel">취소</string>
     <string name="action_delete">삭제</string>
     <string name="sure_to_delete_images">삭제하시겠습니까?</string>
+    <string name="action_change_tag">태그 변경</string>
+    <string name="settings_backup_restore">백업 / 복원</string>
+    <string name="settings_backup_restore_desc">이미지 파일을 Dropbox로 백업하거나 Dropbox로부터 복원합니다.</string>
 
 </resources>

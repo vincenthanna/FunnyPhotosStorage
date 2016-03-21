@@ -47,10 +47,11 @@ public class BottomMenuSheetDialog extends Dialog {
         getWindow().setGravity(Gravity.BOTTOM);
     }
 
-    public void setListViewItemClickListener(AdapterView.OnItemClickListener listener)
+    public BottomMenuSheetDialog setListViewItemClickListener(AdapterView.OnItemClickListener listener)
     {
         if (_lv != null) {
             _lv.setOnItemClickListener(listener);
         }
+        return this;
     }
 }

@@ -3,9 +3,12 @@ package vh1981.com.funnyphotosstorage;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.audiofx.BassBoost;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.view.Gravity;
@@ -22,6 +25,8 @@ import android.os.Handler.*;
 import java.util.ArrayList;
 
 
+import Consts.ActivityRequestType;
+import PopupMenu.PopupMenuItem;
 import Utils.DebugLog;
 
 
@@ -29,14 +34,26 @@ public class SettingsActivity extends Activity implements BackupManagerCallback 
 
     ListView _lv;
     SettingsListAdapter _lvAdapter;
+    Activity _activity;
 
     enum BACKUP_STATUS {
         BACKUP_IDLE,
         BACKUP_RUNNING
     };
     BACKUP_STATUS _backupStatus;
-    public static String APP_AUTO_BACKUP_TOKEN = "jkldjsfakldsj3837";
     Context _context;
+    BottomMenuSheetDialog _bottomSheetDialog = null;
+
+    static int _timerDelay = 1000;
+    Handler _timerHandler = new Handler();
+
+    private Runnable timerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            _lvAdapter.notifyDataSetChanged();
+            _timerHandler.postDelayed(this, _timerDelay);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +67,8 @@ public class SettingsActivity extends Activity implements BackupManagerCallback 
 
         _lv.setOnItemClickListener(mItemClickListener);
         _context = getBaseContext();
-
-        BackupManager.instance().addUICallback(this);
+        _timerHandler.postDelayed(timerRunnable, _timerDelay);
+        _activity = this;
     }
 
     @Override
@@ -80,31 +97,34 @@ public class SettingsActivity extends Activity implements BackupManagerCallback 
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position,  long l_position) {
             switch(position) {
-                case 0:
-                    DebugLog.TRACE("backup called!");
-                    backupToDropbox();
-                    break;
-                case 1:
-                    break;
-                case 2:
-                {
-                    SharedPreferences preferences = _context.getSharedPreferences(SettingsActivity.APP_AUTO_BACKUP_TOKEN, Context.MODE_PRIVATE);
-                    boolean enabled = preferences.getBoolean(SettingsActivity.APP_AUTO_BACKUP_TOKEN, false);
-                    SharedPreferences.Editor editor = preferences.edit();
-                    if (enabled) {
-                        editor.putBoolean(APP_AUTO_BACKUP_TOKEN, false);
+                case 0: {
+                    ArrayList<PopupMenuItem> popupMenus = new ArrayList<PopupMenuItem>();
+                    popupMenus.add(new PopupMenuItem(getResources().getString(R.string.settings_backup), "", android.R.drawable.ic_menu_upload));
+                    popupMenus.add(new PopupMenuItem(getResources().getString(R.string.settings_restore), "", android.R.drawable.ic_menu_save));
 
-                    }
-                    else {
-                        editor.putBoolean(APP_AUTO_BACKUP_TOKEN, true);
-                    }
-                    editor.commit();
-
-                    if (preferences.getBoolean(SettingsActivity.APP_AUTO_BACKUP_TOKEN, false) == true) {
-                        backupToDropbox();
-                    }
-
-                    _lvAdapter.notifyDataSetChanged();
+                    AdapterView.OnItemClickListener listener = new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            Intent intent = new Intent(_activity, SettingsActivity.class);
+                            switch(position) {
+                                case 0:
+                                    // backup
+                                    DebugLog.TRACE("backup called!");
+                                    backupToDropbox();
+                                    break;
+                                case 1:
+                                    // restore
+                                    DebugLog.TRACE("restore called!");
+                                    restoreFromDropbox();
+                                    break;
+                                default:
+                                    break;
+                            }
+                            _bottomSheetDialog.hide();
+                        }
+                    };
+                    _bottomSheetDialog = new BottomMenuSheetDialog(SettingsActivity.this, popupMenus);
+                    _bottomSheetDialog.setListViewItemClickListener(listener).show();
                 }
                 break;
 
@@ -115,10 +135,40 @@ public class SettingsActivity extends Activity implements BackupManagerCallback 
         }
     };
 
+    /**
+     * Called after {@link #onRestoreInstanceState}, {@link #onRestart}, or
+     * {@link #onPause}, for your activity to start interacting with the user.
+     * This is a good place to begin animations, open exclusive-access devices
+     * (such as the camera), etc.
+     * <p/>
+     * <p>Keep in mind that onResume is not the best indicator that your activity
+     * is visible to the user; a system window such as the keyguard may be in
+     * front.  Use {@link #onWindowFocusChanged} to know for certain that your
+     * activity is visible to the user (for example, to resume a game).
+     * <p/>
+     * <p><em>Derived classes must call through to the super class's
+     * implementation of this method.  If they do not, an exception will be
+     * thrown.</em></p>
+     *
+     * @see #onRestoreInstanceState
+     * @see #onRestart
+     * @see #onPostResume
+     * @see #onPause
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        BackupManager.instance().dropboxAuthenticationResult();
+    }
+
     public void backupToDropbox()
     {
-        BackupManager.instance().doBackup();
-        _lvAdapter.notifyDataSetChanged();
+        BackupManager.instance().putTask(BackupTask.JOB.BACKUP);
+    }
+
+    public void restoreFromDropbox()
+    {
+        BackupManager.instance().putTask(BackupTask.JOB.RESTORE);
     }
 
     @Override
@@ -194,31 +244,22 @@ class SettingsListAdapter extends BaseAdapter {
         }
         SettingsListViewItem listViewItem = (SettingsListViewItem)convertView;
 
+        BackupManager backupManager = BackupManager.instance();
         switch(position) {
             case 0:
             {
-                BackupManager backupManager = BackupManager.instance();
-
-                if (backupManager.backupRunning() == true) {
-                    listViewItem.showRunning();
+                if (backupManager.isBackupRunning() == true) {
+                    listViewItem.showRunning(BackupManager.instance().get_backupTask().get_job());
                 }
                 else {
                     listViewItem.showStop();
                 }
             }
             break;
+
             case 1:
             {
-                //
-
-            }
-            break;
-            case 2:
-            {
-                SharedPreferences preferences = maincon.getSharedPreferences(SettingsActivity.APP_AUTO_BACKUP_TOKEN, Context.MODE_PRIVATE);
-                boolean enabled = preferences.getBoolean(SettingsActivity.APP_AUTO_BACKUP_TOKEN, false);
-
-                listViewItem.showAutoBackup(enabled);
+                listViewItem.showAutoBackup(MySharedPreferences.instance().get_autoBackupEnabled());
             }
             break;
             default:

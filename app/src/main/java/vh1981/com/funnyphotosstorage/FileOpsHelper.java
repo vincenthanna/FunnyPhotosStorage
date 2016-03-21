@@ -37,7 +37,7 @@ public class FileOpsHelper {
         boolean isSuccess = false;
         if(dir.isDirectory()){
             file = new File(file_path);
-            if(file != null && !file.exists()) {
+            if(!file.exists()) {
                 try {
                     isSuccess = file.createNewFile();
                 } catch (IOException e) {

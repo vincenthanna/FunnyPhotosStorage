@@ -4,7 +4,12 @@ import android.content.Context;
 import android.content.Context.*;
 import android.content.SharedPreferences;
 import android.graphics.Path;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Debug;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
 import android.view.Gravity;
@@ -28,18 +33,33 @@ import static junit.framework.Assert.assertTrue;
 /**
  * Created by yeonhuikim on 15. 8. 21..
  */
-public class BackupManager {
+public class BackupManager extends HandlerThread {
     private static BackupManager _instance = null;
     private static Context _context;
     private DropboxAPI<AndroidAuthSession> _mDBApi;
-    private BackupTask _backupTask = null;
+    BackupTask _backupTask = null;
+    public BackupTask get_backupTask() { return _backupTask; }
+    Handler _handler = null;
+    boolean _running = false;
+    public boolean isRunning() { return _running; }
 
-    private BackupManagerUIHandler _uiHandler = new BackupManagerUIHandler(null);
-    public BackupManagerUIHandler uiHandler() { return _uiHandler; }
-    public void addUICallback(BackupManagerCallback callback)
-    {
-        _uiHandler.addCallback(callback);
+
+    /**
+     * Starts the new Thread of execution. The <code>run()</code> method of
+     * the receiver will be called by the receiver Thread itself (and not the
+     * Thread calling <code>start()</code>).
+     *
+     * @throws IllegalThreadStateException - if this thread has already started.
+     * @see Thread#run
+     */
+    @Override
+    public synchronized void start() {
+        super.start();
+        _running = true;
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
+    /// Dropbox 로그인/인증 관련 코드
 
     final static private String APP_KEY = "jb5r87iwgoambe7";
     final static private String APP_SECRET = "dgq8h1ewnxvh8fs";
@@ -50,33 +70,37 @@ public class BackupManager {
         BackupManager._context = context;
     }
 
-    private BackupManager()
+    public BackupManager(String name) {
+        super(name);
+        dropboxAuthentication();
+    }
+
+    public static BackupManager instance()
+    {
+        if (_instance == null) {
+            _instance = new BackupManager("BackupManager");
+        }
+        return _instance;
+    }
+
+    private void dropboxAuthentication()
     {
         // Dropbox 연결/인증 초기화 :
         SharedPreferences preferences = _context.getSharedPreferences(APP_DROPBOX_TOKEN, Context.MODE_PRIVATE);
         String token = preferences.getString(APP_DROPBOX_TOKEN, "");
-        if (token != null && token.length() > 0) {
+        if (token.length() > 0) {
             // Dropbox set token :
             AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
             AndroidAuthSession session = new AndroidAuthSession(appKeys);
             _mDBApi = new DropboxAPI<AndroidAuthSession>(session);
             _mDBApi.getSession().setOAuth2AccessToken(token);
-        }
-        else {
+        } else {
             // Dropbox authentication :
             AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
             AndroidAuthSession session = new AndroidAuthSession(appKeys);
             _mDBApi = new DropboxAPI<AndroidAuthSession>(session);
             _mDBApi.getSession().startOAuth2Authentication(_context);
         }
-    }
-
-    public static BackupManager instance()
-    {
-        if (_instance == null) {
-            _instance = new BackupManager();
-        }
-        return _instance;
     }
 
     public void dropboxAuthenticationResult()
@@ -92,12 +116,12 @@ public class BackupManager {
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putString(APP_DROPBOX_TOKEN, accessToken);
                 editor.commit();
-
             } catch (IllegalStateException e) {
                 Log.i("DbAuthLog", "Error authenticating", e);
             }
         }
         else if (_mDBApi.getSession().isLinked()) {
+            // 한 번 인증이 성공하면 offline에서도 성공함
             DebugLog.TRACE("Dropbox session linked");
         }
         else {
@@ -109,39 +133,69 @@ public class BackupManager {
         }
     }
 
-    public boolean doBackup() {
-
-        boolean onRunning = true;
-        if (_backupTask == null) {
-            onRunning = false;
-        }
-        else if (_backupTask.getStatus().equals(AsyncTask.Status.FINISHED)) {
-            onRunning = false;
-        }
-
-        if (onRunning == false) {
-            _backupTask = new BackupTask(_context, _mDBApi, _uiHandler, null);
-            _backupTask.execute();
-            return true;
-        }
-
-        DebugLog.TRACE("Temp");
-        return false;
-    }
-
-    public boolean backupRunning()
+    public boolean isDropboxReady()
     {
-        boolean onRunning = false;
-        if (_backupTask == null) {
-            return false;
-        }
-        if (_backupTask.getStatus().equals(AsyncTask.Status.RUNNING)) {
+        if (_mDBApi.getSession().isLinked()) {
             return true;
         }
-        if (_backupTask.getStatus().equals(AsyncTask.Status.FINISHED)) {
-            return false;
-        }
-
         return false;
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Call back method that can be explicitly overridden if needed to execute some
+     * setup before Looper loops.
+     */
+    @Override
+    protected void onLooperPrepared() {
+        super.onLooperPrepared();
+        _handler = new Handler(getLooper()) {
+            /**
+             * Subclasses must implement this to receive messages.
+             *
+             * @param msg
+             */
+            @Override
+            public void handleMessage(Message msg) {
+                _backupTask = (BackupTask) msg.obj;
+                _backupTask.run();
+                super.handleMessage(msg);
+            }
+
+        };
+    }
+
+    public void putTask(BackupTask.JOB job)
+    {
+        if (isDropboxReady()) {
+            if (isNetworkOnline()) {
+                BackupTask task = new BackupTask(job, _context, _mDBApi, null);
+                if (_handler != null) {
+                    DebugLog.TRACE("backup task reserved");
+                    Message msg = Message.obtain(_handler);
+                    msg.obj = task;
+                    _handler.sendMessage(msg);
+                }
+            }
+        }
+        else {
+            dropboxAuthentication();
+        }
+    }
+
+    public boolean isBackupRunning() {
+        if (_backupTask != null) {
+            return _backupTask.isRunning();
+        }
+        return false;
+    }
+
+    public boolean isNetworkOnline() {
+        ConnectivityManager cm =
+                (ConnectivityManager) _context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnected();
+    }
+
 }

@@ -1,6 +1,7 @@
 package vh1981.com.funnyphotosstorage;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -18,11 +19,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import Utils.ClipboardHelper;
 import Utils.DebugLog;
@@ -37,20 +40,15 @@ public class NewImageActivity extends Activity {
     Bitmap _imageBitmap;
 
     public Bitmap getNewImageBitmap() { return _imageBitmap; }
-    private Runnable refreshListView = new Runnable() {
-        @Override
-        public void run() {
-            _lvNewImage.smoothScrollToPosition(0);
-            if (_lvNewImage != null) {
-                _lvAdapter.notifyDataSetChanged();
-            }
-        }
-    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_image);
+
+        ImageManager.setContext(getBaseContext());
+        MySharedPreferences.setContext(this.getBaseContext());
+        MySharedPreferences.instance().set_intentAction(getIntent().getAction());
 
         ClipboardHelper helper = new ClipboardHelper(this.getBaseContext());
         _imageBitmap = helper.getImageFromClipboard();
@@ -79,12 +77,24 @@ public class NewImageActivity extends Activity {
                 }
             }
         }
+
+        ImageView iv = (ImageView)findViewById(R.id.iv);
+        iv.setImageBitmap(_imageBitmap);
+    }
+
+    boolean needShowActionMenu() {
+        if (MySharedPreferences.instance().get_intentAction() != Intent.ACTION_SEND) {
+            return true;
+        }
+        return false;
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_new_image, menu);
+        if (needShowActionMenu()) {
+            getMenuInflater().inflate(R.menu.menu_new_image, menu);
+        }
         return true;
     }
 
@@ -106,24 +116,22 @@ public class NewImageActivity extends Activity {
     private AdapterView.OnItemClickListener _lvCatItemClickListener = new AdapterView.OnItemClickListener() {
         @Override
         public void onItemClick(AdapterView<?> parent, View view, int position,  long l_position) {
-            // do your job
-            if (position > 0) {
-                String tag = ImageManager.instance().getTags().get(position - 1);
-                //DebugLog.TRACE("selected tag=" + tag);
-                ImageManager.instance().createImage(_imageBitmap, tag);
+            String tag = ImageManager.instance().getTags().get(position);
+            ImageManager.instance().createImage(_imageBitmap, tag);
 
-                Intent intent = getIntent();
-                if (intent.getAction() == Intent.ACTION_SEND) { ///< 외부 암시 intent 수신
-                    setResult(Activity.RESULT_OK);
-                    finish();
-                }
-                else {
-                    finish();
-                }
+            Intent intent = getIntent();
+            if (intent.getAction() == Intent.ACTION_SEND) { ///< 외부 암시 intent 수신
+                setResult(Activity.RESULT_OK);
+                finish();
             }
+            else {
+                finish();
+            }
+            return;
         }
     };
 }
+
 
 class NewImageListViewAdapter extends BaseAdapter {
     Context maincon;
@@ -143,7 +151,7 @@ class NewImageListViewAdapter extends BaseAdapter {
     }
 
     public int getCount() {
-        return _tags.size() + 1 /*ListViewItem for Image*/;
+        return _tags.size();
     }
 
     @Override
@@ -157,47 +165,18 @@ class NewImageListViewAdapter extends BaseAdapter {
 
     // 각 항목의 view 생성
     public View getView(int position, View convertView, ViewGroup parent) {
-
         if (convertView == null) {
-            switch(position) {
-                case 0:
-                    convertView = new NewImageListViewItem_Image(parent.getContext(), _parentActivity);
-                    break;
-                default:
-                    convertView = new CategoryListViewItem(parent.getContext(), _parentActivity);
-                    CategoryListViewItem listViewItem = (CategoryListViewItem)convertView;
-                    listViewItem.setTitleText(_tags.get(position-1) );
-                    break;
-            }
+            convertView = new CategoryListViewItem(parent.getContext(), _parentActivity);
+            CategoryListViewItem listViewItem = (CategoryListViewItem)convertView;
+            listViewItem.setTitleText(_tags.get(position) );
         }
-
-        BaseListViewItem baseItem = (BaseListViewItem) convertView;
-        switch(position) {
-            case 0:
-                if (baseItem.type() != BaseListViewItem.BaseListViewItemType.TYPE_NewImage) {
-                    convertView = new NewImageListViewItem_Image(parent.getContext(), _parentActivity);
-                }
-                Bitmap imageBitmap = _parentActivity.getNewImageBitmap();
-                if (imageBitmap != null) {
-                    NewImageListViewItem_Image lvItemView = (NewImageListViewItem_Image) convertView;
-                    lvItemView.setImage(imageBitmap);
-                }
-                break;
-            default:
-                if (baseItem.type() != BaseListViewItem.BaseListViewItemType.TYPE_Category) {
-                    convertView = new CategoryListViewItem(parent.getContext(), _parentActivity);
-
-                    CategoryListViewItem listViewItem = (CategoryListViewItem)convertView;
-                    listViewItem.setTitleText(_tags.get(position-1) );
-                }
-                break;
-        }
-
+        CategoryListViewItem listViewItem = (CategoryListViewItem)convertView;
+        listViewItem.setTitleText(_tags.get(position) );
         return convertView;
     }
 
     @Override
     public int getViewTypeCount() {
-        return 2;
+        return 1;
     }
 }

@@ -104,7 +104,9 @@ public class AddTagDialog extends Dialog {
             }
             else {
                 // 실패하면 이곳으로 오나 기본적으로 실패할 일이 없음.
-                assert false;
+                if (BuildConfig.DEBUG) {
+                    assert false;
+                }
             }
         }
 
